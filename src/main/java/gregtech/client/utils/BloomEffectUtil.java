@@ -24,9 +24,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.*;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -268,6 +272,49 @@ public class BloomEffectUtil {
         worldRenderers[bloom.ordinal()] = new BufferBuilder(131072);
     }
 
+    // gl states
+    public static final IntBuffer intBuffer = ByteBuffer.allocateDirect(16 << 2).order(ByteOrder.nativeOrder()).asIntBuffer();
+
+    private static int textureID = 0;
+    private static boolean blend = false;
+    private static int shadeModel = 0;
+    private static boolean depthTest = false;
+    private static int blendSrcRgb;
+    private static int blendDstRgb;
+    private static int blendSrcAlpha;
+    private static int blendDstAlpha;
+
+    public static void storeCommonGlStates() {
+        GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D, intBuffer);
+        textureID = intBuffer.get(0);
+        blend = GL11.glIsEnabled(GL11.GL_BLEND);
+        GL11.glGetInteger(GL11.GL_SHADE_MODEL, intBuffer);
+        shadeModel = intBuffer.get(0);
+        depthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        GL11.glGetInteger(GL14.GL_BLEND_SRC_RGB, intBuffer);
+        blendSrcRgb = intBuffer.get(0);
+        GL11.glGetInteger(GL14.GL_BLEND_DST_RGB, intBuffer);
+        blendDstRgb = intBuffer.get(0);
+        GL11.glGetInteger(GL14.GL_BLEND_SRC_ALPHA, intBuffer);
+        blendSrcAlpha = intBuffer.get(0);
+        GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA, intBuffer);
+        blendDstAlpha = intBuffer.get(0);
+        GL11.glGetInteger(GL11.GL_ALPHA_TEST_FUNC, intBuffer);
+    }
+    public static void restoreCommonGlStates() {
+        GlStateManager.tryBlendFuncSeparate(blendSrcRgb, blendDstRgb, blendSrcAlpha, blendDstAlpha);
+        if (depthTest)
+            GlStateManager.enableDepth();
+        else
+            GlStateManager.disableDepth();
+        GlStateManager.shadeModel(shadeModel);
+        if (blend)
+            GlStateManager.enableBlend();
+        else
+            GlStateManager.disableBlend();
+        GlStateManager.bindTexture(textureID);
+    }
+
     // Calls injected via ASM
     @SuppressWarnings("unused")
     public static int renderBloomBlockLayer(RenderGlobal renderGlobal,
@@ -356,7 +403,9 @@ public class BloomEffectUtil {
         mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
 
+        GlStateManager.depthMask(true);
         int result = renderGlobal.renderBlockLayer(blockRenderLayer, partialTicks, pass, entity);
+        GlStateManager.depthMask(false);
 
         mc.profiler.endStartSection("bloom");
 
