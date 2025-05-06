@@ -30,9 +30,10 @@ public class MixinEntityRenderer {
                                      final long finishTimeNano,
                                      final CallbackInfo ci,
                                      @Local(name = "renderglobal") RenderGlobal renderglobal,
-                                     @Local(name = "entity") Entity entity)
-    {
+                                     @Local(name = "entity") Entity entity) {
+        BloomEffectUtil.storeCommonGlStates();
         BloomEffectUtil.renderBloomBlockLayer(renderglobal, BlockRenderLayer.TRANSLUCENT, partialTicks, pass, entity);
+        BloomEffectUtil.restoreCommonGlStates();
     }
-
+    
 }
