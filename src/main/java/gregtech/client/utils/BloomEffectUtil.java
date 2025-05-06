@@ -272,8 +272,8 @@ public class BloomEffectUtil {
         worldRenderers[bloom.ordinal()] = new BufferBuilder(131072);
     }
 
-    // gl states
-    public static final IntBuffer intBuffer = ByteBuffer.allocateDirect(16 << 2).order(ByteOrder.nativeOrder()).asIntBuffer();
+    // GL states
+    private static final IntBuffer intBuffer = ByteBuffer.allocateDirect(16 << 2).order(ByteOrder.nativeOrder()).asIntBuffer();
 
     private static int textureID = 0;
     private static boolean blend = false;
@@ -299,7 +299,6 @@ public class BloomEffectUtil {
         blendSrcAlpha = intBuffer.get(0);
         GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA, intBuffer);
         blendDstAlpha = intBuffer.get(0);
-        GL11.glGetInteger(GL11.GL_ALPHA_TEST_FUNC, intBuffer);
     }
     public static void restoreCommonGlStates() {
         GlStateManager.tryBlendFuncSeparate(blendSrcRgb, blendDstRgb, blendSrcAlpha, blendDstAlpha);
